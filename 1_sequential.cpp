@@ -1,6 +1,6 @@
 // Merge Sort Benchmark — 1. Sequential version
 // Output: appends benchmark results into results.csv
-// Compile: g++ -O2 -std=c++17 -o seq 1_sequential_benchmark.cpp
+// Compile: g++ -O2 -std=c++17 -o seq 1_sequential.cpp
 // Run:     ./seq
 #include "benchmark_utils.hpp"
 

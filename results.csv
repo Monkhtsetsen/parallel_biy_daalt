@@ -1,0 +1,4 @@
+Algorithm,N,ExecutionTimeMs,H2DMs,KernelMs,D2HMs,TotalTimeMs,TransferredBytes,TotalOperations,AchievableMOPS,Correct,Workers,Notes
+Sequential,10000,3.097000,0.000000,0.000000,0.000000,3.097000,0,132877,42.905069,YES,1,recursive_merge_sort
+Sequential,100000,20.009000,0.000000,0.000000,0.000000,20.009000,0,1660964,83.010845,YES,1,recursive_merge_sort
+Sequential,1000000,195.336000,0.000000,0.000000,0.000000,195.336000,0,19931569,102.037356,YES,1,recursive_merge_sort

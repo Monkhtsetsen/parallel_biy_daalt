@@ -1,6 +1,5 @@
 #ifndef BENCHMARK_UTILS_HPP
 #define BENCHMARK_UTILS_HPP
-
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -9,7 +8,6 @@
 #include <string>
 #include <thread>
 #include <vector>
-
 inline std::vector<int> makeRandomData(int n) {
     // Deterministic lightweight generator: same input for every algorithm.
     unsigned int x = 42u;
