@@ -1,79 +1,62 @@
-// ============================================================
-//  Merge Sort — 1. Дараалсан (Sequential) хувилбар
-//  Хэрэглээ: g++ -O2 -o seq 1_sequential.cpp && ./seq
-// ============================================================
-#include <iostream>
-#include <vector>
-#include <chrono>
-#include <random>
-#include <algorithm>
-#include <iomanip>
+// Merge Sort Benchmark — 1. Sequential version
+// Output: appends benchmark results into results.csv
+// Compile: g++ -O2 -std=c++17 -o seq 1_sequential_benchmark.cpp
+// Run:     ./seq
+#include "benchmark_utils.hpp"
 
 using namespace std;
 using namespace chrono;
 
-// ----------------------------------------------------------
-//  Нэгтгэх туслах функц
-// ----------------------------------------------------------
-void merge(vector<int>& arr, int left, int mid, int right) {
-    // Зүүн болон баруун хагас хуулбар
-    vector<int> L(arr.begin() + left,  arr.begin() + mid + 1);
+void mergeParts(vector<int>& arr, int left, int mid, int right) {
+    vector<int> L(arr.begin() + left, arr.begin() + mid + 1);
     vector<int> R(arr.begin() + mid + 1, arr.begin() + right + 1);
 
     int i = 0, j = 0, k = left;
-    while (i < (int)L.size() && j < (int)R.size())
+    while (i < (int)L.size() && j < (int)R.size()) {
         arr[k++] = (L[i] <= R[j]) ? L[i++] : R[j++];
+    }
     while (i < (int)L.size()) arr[k++] = L[i++];
     while (j < (int)R.size()) arr[k++] = R[j++];
 }
 
-// ----------------------------------------------------------
-//  Рекурсив merge sort
-// ----------------------------------------------------------
-void mergeSort(vector<int>& arr, int left, int right) {
+void mergeSortSequential(vector<int>& arr, int left, int right) {
     if (left >= right) return;
     int mid = left + (right - left) / 2;
-    mergeSort(arr, left, mid);
-    mergeSort(arr, mid + 1, right);
-    merge(arr, left, mid, right);
+    mergeSortSequential(arr, left, mid);
+    mergeSortSequential(arr, mid + 1, right);
+    mergeParts(arr, left, mid, right);
 }
 
-// ----------------------------------------------------------
-//  Туршилт явуулах
-// ----------------------------------------------------------
-void runTest(int n) {
-    // Санамсаргүй өгөгдөл үүсгэх
-    mt19937 rng(42);
-    uniform_int_distribution<int> dist(0, 1'000'000);
-    vector<int> arr(n);
-    for (auto& x : arr) x = dist(rng);
+double runSequential(vector<int>& arr) {
+    auto start = high_resolution_clock::now();
+    mergeSortSequential(arr, 0, (int)arr.size() - 1);
+    auto end = high_resolution_clock::now();
+    return duration<double, milli>(end - start).count();
+}
 
-    // Зөв эрэмбэлсэн хуулбар (баталгаажуулалт)
+void benchmarkOne(int n, const string& csvFile) {
+    vector<int> arr = makeRandomData(n);
     vector<int> expected = arr;
     sort(expected.begin(), expected.end());
 
-    auto start = high_resolution_clock::now();
-    mergeSort(arr, 0, n - 1);
-    auto end   = high_resolution_clock::now();
-
-    double ms = duration<double, milli>(end - start).count();
-
-    // Зөвшөөрөл шалгах
+    double ms = runSequential(arr);
     bool correct = (arr == expected);
 
-    cout << fixed << setprecision(3);
-    cout << "  n = " << setw(9) << n
-         << "  |  Хугацаа: " << setw(10) << ms << " мс"
-         << "  |  " << (correct ? "✓ Зөв" : "✗ Алдаа") << "\n";
+    appendResultCsv(csvFile, "Sequential", n, ms, 0.0, 0.0, 0.0, ms, 0, correct, "1", "recursive_merge_sort");
+    printResult("Sequential", n, ms, correct);
 }
 
 int main() {
+    const string csvFile = "results.csv";
     cout << "====================================================\n";
-    cout << "  Merge Sort — Дараалсан (Sequential)\n";
+    cout << "  Merge Sort Benchmark — Sequential\n";
     cout << "====================================================\n";
-    runTest(10'000);
-    runTest(100'000);
-    runTest(1'000'000);
+
+    benchmarkOne(10'000, csvFile);
+    benchmarkOne(100'000, csvFile);
+    benchmarkOne(1'000'000, csvFile);
+
     cout << "====================================================\n";
+    cout << "Saved/appended to " << csvFile << "\n";
     return 0;
 }
