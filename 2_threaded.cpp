@@ -155,17 +155,14 @@ int main() {
     int maxDepth = computeMaxDepth();
     unsigned int hw = thread::hardware_concurrency();
 
-    cout << "====================================================\n";
     cout << "  Merge Sort Benchmark — std::thread\n";
     cout << "  hardware_concurrency = " << hw
          << ", maxDepth = " << maxDepth << "\n";
-    cout << "====================================================\n";
 
     benchmarkOne(10'000, csvFile, maxDepth);
     benchmarkOne(100'000, csvFile, maxDepth);
     benchmarkOne(1'000'000, csvFile, maxDepth);
 
-    cout << "====================================================\n";
     cout << "Saved/appended to " << csvFile << "\n";
 
     return 0;

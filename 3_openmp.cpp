@@ -3,7 +3,6 @@
 // Output: appends benchmark results into results.csv
 // Compile: g++ -O2 -std=c++17 -fopenmp -o omp 3_openmp_benchmark.cpp
 // Run:     ./omp
-// ============================================================
 
 #include "benchmark_utils.hpp"
 
@@ -17,9 +16,7 @@
 using namespace std;
 using namespace chrono;
 
-// ------------------------------------------------------------
 // Merge helper function
-// ------------------------------------------------------------
 void mergeParts(vector<int>& arr, int left, int mid, int right) {
     vector<int> L(arr.begin() + left, arr.begin() + mid + 1);
     vector<int> R(arr.begin() + mid + 1, arr.begin() + right + 1);
@@ -45,10 +42,8 @@ void mergeParts(vector<int>& arr, int left, int mid, int right) {
     }
 }
 
-// ------------------------------------------------------------
 // Sequential merge sort
 // Used when subarray is too small.
-// ------------------------------------------------------------
 void mergeSortSeq(vector<int>& arr, int left, int right) {
     if (left >= right) return;
 
@@ -60,7 +55,6 @@ void mergeSortSeq(vector<int>& arr, int left, int right) {
     mergeParts(arr, left, mid, right);
 }
 
-// ------------------------------------------------------------
 // OpenMP task-based parallel merge sort
 //
 // #pragma omp task:
@@ -71,7 +65,6 @@ void mergeSortSeq(vector<int>& arr, int left, int right) {
 //
 // cutoff:
 //   Small arrays are sorted sequentially to reduce task overhead.
-// ------------------------------------------------------------
 const int OMP_CUTOFF = 4096;
 
 void mergeSortOMP(vector<int>& arr, int left, int right) {
@@ -101,9 +94,6 @@ void mergeSortOMP(vector<int>& arr, int left, int right) {
     mergeParts(arr, left, mid, right);
 }
 
-// ------------------------------------------------------------
-// Run OpenMP benchmark
-// ------------------------------------------------------------
 double runOpenMP(vector<int>& arr, int threads) {
     if (arr.empty()) return 0.0;
 
@@ -124,9 +114,7 @@ double runOpenMP(vector<int>& arr, int threads) {
     return duration<double, milli>(end - start).count();
 }
 
-// ------------------------------------------------------------
 // Benchmark one input size
-// ------------------------------------------------------------
 void benchmarkOne(int n, const string& csvFile, int threads) {
     vector<int> arr = makeRandomData(n);
 
@@ -166,17 +154,13 @@ int main() {
 
     int maxThreads = omp_get_max_threads();
 
-    cout << "====================================================\n";
     cout << "  Merge Sort Benchmark — OpenMP\n";
     cout << "  OpenMP max threads = " << maxThreads << "\n";
     cout << "  Cutoff = " << OMP_CUTOFF << "\n";
-    cout << "====================================================\n";
 
     benchmarkOne(10'000, csvFile, maxThreads);
     benchmarkOne(100'000, csvFile, maxThreads);
     benchmarkOne(1'000'000, csvFile, maxThreads);
-
-    cout << "====================================================\n";
     cout << "Saved/appended to " << csvFile << "\n";
 
     return 0;

@@ -48,15 +48,12 @@ void benchmarkOne(int n, const string& csvFile) {
 
 int main() {
     const string csvFile = "results.csv";
-    cout << "====================================================\n";
     cout << "  Merge Sort Benchmark — Sequential\n";
-    cout << "====================================================\n";
 
     benchmarkOne(10'000, csvFile);
     benchmarkOne(100'000, csvFile);
     benchmarkOne(1'000'000, csvFile);
 
-    cout << "====================================================\n";
     cout << "Saved/appended to " << csvFile << "\n";
     return 0;
 }

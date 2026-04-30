@@ -22,9 +22,6 @@
 
 using namespace std;
 
-// ----------------------------------------------------------
-//  CUDA алдаа шалгах macro
-// ----------------------------------------------------------
 #define CUDA_CHECK(call)                                              \
     do {                                                              \
         cudaError_t err = (call);                                     \
@@ -35,20 +32,19 @@ using namespace std;
         }                                                             \
     } while (0)
 
-// ----------------------------------------------------------
+
 //  GPU kernel: нэг thread нэг sub-array хос нэгтгэнэ
 //
 //  arr   — эрэмбэлэх массив (device)
 //  tmp   — түр санах ой (device)
 //  n     — нийт элемент тоо
 //  width — одоогийн нэгтгэлийн блокийн хагас хэмжээ
-// ----------------------------------------------------------
+
 __global__ void mergeSortKernel(int* arr, int* tmp, int n, int width) {
-    // Энэ thread-ийн нэгтгэх блокийн эхлэл
     int tid   = blockIdx.x * blockDim.x + threadIdx.x;
     int left  = tid * 2 * width;
 
-    if (left >= n) return;   // хязгаараас гарсан thread буцна
+    if (left >= n) return;
 
     int mid   = min(left + width - 1, n - 1);
     int right = min(left + 2 * width - 1, n - 1);
@@ -68,15 +64,11 @@ __global__ void mergeSortKernel(int* arr, int* tmp, int n, int width) {
         arr[x] = tmp[x];
 }
 
-// ----------------------------------------------------------
 //  CPU талын bottom-up CUDA merge sort дуудлага
-// ----------------------------------------------------------
 void mergeSortCUDA(int* d_arr, int* d_tmp, int n) {
     const int BLOCK_SIZE = 256;
 
-    // width: 1, 2, 4, ..., n/2 давталт
     for (int width = 1; width < n; width *= 2) {
-        // Хичнээн thread хэрэгтэй вэ?
         int numMerges = (n + 2 * width - 1) / (2 * width);
         int gridSize  = (numMerges + BLOCK_SIZE - 1) / BLOCK_SIZE;
 
@@ -86,10 +78,7 @@ void mergeSortCUDA(int* d_arr, int* d_tmp, int n) {
     }
 }
 
-// ----------------------------------------------------------
-//  Benchmark нэг хэмжээ дээр ажиллуулж CSV-д бичнэ
 //  H2D, Kernel, D2H хугацааг тусад нь хэмжинэ
-// ----------------------------------------------------------
 void benchmarkOne(int n, const string& csvFile) {
     // benchmark_utils-тай ижил random өгөгдөл үүсгэнэ
     vector<int> h_arr = makeRandomData(n);
@@ -97,14 +86,13 @@ void benchmarkOne(int n, const string& csvFile) {
     vector<int> expected = h_arr;
     sort(expected.begin(), expected.end());
 
-    // Device санах ой хуваарилна
     int *d_arr, *d_tmp;
     CUDA_CHECK(cudaMalloc(&d_arr, n * sizeof(int)));
     CUDA_CHECK(cudaMalloc(&d_tmp, n * sizeof(int)));
 
     long long transferredBytes = 2LL * n * sizeof(int); // H2D + D2H
 
-    // ---- Host → Device (H2D) хугацаа ----
+    // Host → Device (H2D) хугацаа ----
     cudaEvent_t evH2D_s, evH2D_e;
     CUDA_CHECK(cudaEventCreate(&evH2D_s));
     CUDA_CHECK(cudaEventCreate(&evH2D_e));
@@ -117,7 +105,7 @@ void benchmarkOne(int n, const string& csvFile) {
     CUDA_CHECK(cudaEventDestroy(evH2D_s));
     CUDA_CHECK(cudaEventDestroy(evH2D_e));
 
-    // ---- Kernel хугацаа ----
+    // Kernel хугацаа 
     cudaEvent_t evK_s, evK_e;
     CUDA_CHECK(cudaEventCreate(&evK_s));
     CUDA_CHECK(cudaEventCreate(&evK_e));
@@ -130,7 +118,7 @@ void benchmarkOne(int n, const string& csvFile) {
     CUDA_CHECK(cudaEventDestroy(evK_s));
     CUDA_CHECK(cudaEventDestroy(evK_e));
 
-    // ---- Device → Host (D2H) хугацаа ----
+    // Device → Host (D2H) хугацаа ----
     cudaEvent_t evD2H_s, evD2H_e;
     CUDA_CHECK(cudaEventCreate(&evD2H_s));
     CUDA_CHECK(cudaEventCreate(&evD2H_e));
@@ -147,24 +135,22 @@ void benchmarkOne(int n, const string& csvFile) {
 
     bool correct = (h_arr == expected);
 
-    // GPU нэр
     cudaDeviceProp prop;
     CUDA_CHECK(cudaGetDeviceProperties(&prop, 0));
     string gpuName = prop.name;
 
-    // CSV-д бичнэ (benchmark_utils-тай нийцтэй)
     appendResultCsv(
         csvFile,
         "CUDA",
         n,
-        (double)kernelMs,   // ExecutionTimeMs = зөвхөн kernel
-        (double)h2dMs,      // H2DMs
-        (double)kernelMs,   // KernelMs
-        (double)d2hMs,      // D2HMs
-        totalMs,            // TotalTimeMs = H2D + Kernel + D2H
+        (double)kernelMs,
+        (double)h2dMs,
+        (double)kernelMs,
+        (double)d2hMs, 
+        totalMs,
         transferredBytes,
         correct,
-        "1",                // workers = 1 GPU
+        "1",
         "bottom_up_merge_sort_gpu=" + gpuName
     );
 
@@ -179,23 +165,18 @@ void benchmarkOne(int n, const string& csvFile) {
 
 int main() {
     const string csvFile = "results.csv";
-
-    // GPU мэдээлэл харуулах
     cudaDeviceProp prop;
     CUDA_CHECK(cudaGetDeviceProperties(&prop, 0));
 
-    cout << "====================================================\n";
     cout << "  Merge Sort Benchmark — CUDA (GPU параллел)\n";
     cout << "  GPU: " << prop.name
          << "  |  SM: " << prop.multiProcessorCount
          << "  |  Санах ой: " << prop.totalGlobalMem / (1024*1024) << " MB\n";
-    cout << "====================================================\n";
 
     benchmarkOne(10'000,   csvFile);
     benchmarkOne(100'000,  csvFile);
     benchmarkOne(1'000'000, csvFile);
 
-    cout << "====================================================\n";
     cout << "Saved/appended to " << csvFile << "\n";
 
     return 0;
