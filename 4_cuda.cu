@@ -173,7 +173,6 @@ void benchmarkOne(int n, const string& csvFile) {
         + " K=" + to_string((int)kernelMs) + "ms"
         + " D2H=" + to_string((int)d2hMs) + "ms");
 
-    // Цэвэрлэх
     CUDA_CHECK(cudaFree(d_arr));
     CUDA_CHECK(cudaFree(d_tmp));
 }

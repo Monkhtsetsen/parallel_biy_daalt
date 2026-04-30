@@ -9,7 +9,6 @@
 #include <thread>
 #include <vector>
 inline std::vector<int> makeRandomData(int n) {
-    // Deterministic lightweight generator: same input for every algorithm.
     unsigned int x = 42u;
     std::vector<int> a(n);
     for (int &v : a) {
