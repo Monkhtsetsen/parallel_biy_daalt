@@ -36,5 +36,10 @@ echo ""
 echo "==== График үүсгэж байна... ===="
 python3 plotresult.py
 
+montage execution_time.png speedup.png cuda_breakdown.png performance_mops.png \
+-tile 2x2 -geometry +20+20 all_graphics.png
+
+rm execution_time.png speedup.png cuda_breakdown.png performance_mops.png
+
 echo ""
 echo "Дууслаа! results.csv болон *.png файлууд үүслээ."
