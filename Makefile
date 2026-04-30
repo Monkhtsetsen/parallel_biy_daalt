@@ -9,7 +9,7 @@
 CXX      = g++
 CXXFLAGS = -O2 -std=c++17
 NVCC     = nvcc
-NVFLAGS  = -O2
+NVFLAGS  = -O2 -std=c++17
 
 .PHONY: all seq thr omp cuda run clean
 
@@ -27,7 +27,7 @@ omp:
 cuda:
 	$(NVCC) $(NVFLAGS) -o cuda 4_cuda.cu
 
-run: all
+run: seq thr omp
 	@echo ""
 	@echo "==== 1. Sequential ===="
 	@./seq
@@ -37,9 +37,14 @@ run: all
 	@echo ""
 	@echo "==== 3. OpenMP ===="
 	@./omp
-	@echo ""
-	@echo "==== 4. CUDA ===="
-	@./cuda
+	@if [ -f ./cuda ]; then \
+		echo ""; \
+		echo "==== 4. CUDA ===="; \
+		./cuda; \
+	else \
+		echo ""; \
+		echo "==== 4. CUDA ==== (binary олдсонгүй, make cuda гүйцэтгэнэ үү)"; \
+	fi
 
 clean:
-	rm -f seq thr omp cuda
+	rm -f seq thr omp cuda results.csv results_with_speedup.csv *.png

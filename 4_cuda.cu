@@ -1,17 +1,23 @@
 // ============================================================
 //  Merge Sort — 4. CUDA (GPU) хувилбар
-//  Хэрэглээ: nvcc -O2 -o cuda 4_cuda.cu && ./cuda
+//  Compile: nvcc -O2 -std=c++17 -o cuda 4_cuda.cu
+//  Run:     ./cuda
 //
 //  Арга: Bottom-up iterative merge sort
 //  - Эхний давталт: хэмжээ=1 блокуудыг нэгтгэнэ (2 болгоно)
 //  - Дараа нь: хэмжээ=2 → 4 → 8 → ... → n
 //  - Нэг GPU thread нэг merge операцийг хийнэ
+//
+//  CSV гаралт: results.csv (benchmark_utils.hpp-тэй нийцтэй)
 // ============================================================
+
+#include "benchmark_utils.hpp"
+
 #include <iostream>
 #include <vector>
-#include <random>
 #include <algorithm>
 #include <iomanip>
+#include <string>
 #include <cuda_runtime.h>
 
 using namespace std;
@@ -81,14 +87,14 @@ void mergeSortCUDA(int* d_arr, int* d_tmp, int n) {
 }
 
 // ----------------------------------------------------------
-//  Туршилт
+//  Benchmark нэг хэмжээ дээр ажиллуулж CSV-д бичнэ
+//  H2D, Kernel, D2H хугацааг тусад нь хэмжинэ
 // ----------------------------------------------------------
-void runTest(int n) {
-    mt19937 rng(42);
-    uniform_int_distribution<int> dist(0, 1'000'000);
-    vector<int> h_arr(n), expected(n);
-    for (auto& x : h_arr) x = dist(rng);
-    expected = h_arr;
+void benchmarkOne(int n, const string& csvFile) {
+    // benchmark_utils-тай ижил random өгөгдөл үүсгэнэ
+    vector<int> h_arr = makeRandomData(n);
+
+    vector<int> expected = h_arr;
     sort(expected.begin(), expected.end());
 
     // Device санах ой хуваарилна
@@ -96,58 +102,102 @@ void runTest(int n) {
     CUDA_CHECK(cudaMalloc(&d_arr, n * sizeof(int)));
     CUDA_CHECK(cudaMalloc(&d_tmp, n * sizeof(int)));
 
-    // Host → Device
+    long long transferredBytes = 2LL * n * sizeof(int); // H2D + D2H
+
+    // ---- Host → Device (H2D) хугацаа ----
+    cudaEvent_t evH2D_s, evH2D_e;
+    CUDA_CHECK(cudaEventCreate(&evH2D_s));
+    CUDA_CHECK(cudaEventCreate(&evH2D_e));
+    CUDA_CHECK(cudaEventRecord(evH2D_s));
     CUDA_CHECK(cudaMemcpy(d_arr, h_arr.data(), n * sizeof(int), cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaEventRecord(evH2D_e));
+    CUDA_CHECK(cudaEventSynchronize(evH2D_e));
+    float h2dMs = 0.0f;
+    CUDA_CHECK(cudaEventElapsedTime(&h2dMs, evH2D_s, evH2D_e));
+    CUDA_CHECK(cudaEventDestroy(evH2D_s));
+    CUDA_CHECK(cudaEventDestroy(evH2D_e));
 
-    // CUDA event-ээр хугацаа хэмжих
-    cudaEvent_t start, stop;
-    CUDA_CHECK(cudaEventCreate(&start));
-    CUDA_CHECK(cudaEventCreate(&stop));
-    CUDA_CHECK(cudaEventRecord(start));
-
+    // ---- Kernel хугацаа ----
+    cudaEvent_t evK_s, evK_e;
+    CUDA_CHECK(cudaEventCreate(&evK_s));
+    CUDA_CHECK(cudaEventCreate(&evK_e));
+    CUDA_CHECK(cudaEventRecord(evK_s));
     mergeSortCUDA(d_arr, d_tmp, n);
+    CUDA_CHECK(cudaEventRecord(evK_e));
+    CUDA_CHECK(cudaEventSynchronize(evK_e));
+    float kernelMs = 0.0f;
+    CUDA_CHECK(cudaEventElapsedTime(&kernelMs, evK_s, evK_e));
+    CUDA_CHECK(cudaEventDestroy(evK_s));
+    CUDA_CHECK(cudaEventDestroy(evK_e));
 
-    CUDA_CHECK(cudaEventRecord(stop));
-    CUDA_CHECK(cudaEventSynchronize(stop));
-
-    float ms = 0.0f;
-    CUDA_CHECK(cudaEventElapsedTime(&ms, start, stop));
-
-    // Device → Host
+    // ---- Device → Host (D2H) хугацаа ----
+    cudaEvent_t evD2H_s, evD2H_e;
+    CUDA_CHECK(cudaEventCreate(&evD2H_s));
+    CUDA_CHECK(cudaEventCreate(&evD2H_e));
+    CUDA_CHECK(cudaEventRecord(evD2H_s));
     CUDA_CHECK(cudaMemcpy(h_arr.data(), d_arr, n * sizeof(int), cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaEventRecord(evD2H_e));
+    CUDA_CHECK(cudaEventSynchronize(evD2H_e));
+    float d2hMs = 0.0f;
+    CUDA_CHECK(cudaEventElapsedTime(&d2hMs, evD2H_s, evD2H_e));
+    CUDA_CHECK(cudaEventDestroy(evD2H_s));
+    CUDA_CHECK(cudaEventDestroy(evD2H_e));
+
+    double totalMs = (double)h2dMs + (double)kernelMs + (double)d2hMs;
 
     bool correct = (h_arr == expected);
 
-    // GPU мэдээлэл
+    // GPU нэр
     cudaDeviceProp prop;
     CUDA_CHECK(cudaGetDeviceProperties(&prop, 0));
+    string gpuName = prop.name;
 
-    cout << fixed << setprecision(3);
-    cout << "  n = " << setw(9) << n
-         << "  |  Хугацаа: " << setw(10) << ms << " мс"
-         << "  |  GPU: " << prop.name
-         << "  |  " << (correct ? "✓ Зөв" : "✗ Алдаа") << "\n";
+    // CSV-д бичнэ (benchmark_utils-тай нийцтэй)
+    appendResultCsv(
+        csvFile,
+        "CUDA",
+        n,
+        (double)kernelMs,   // ExecutionTimeMs = зөвхөн kernel
+        (double)h2dMs,      // H2DMs
+        (double)kernelMs,   // KernelMs
+        (double)d2hMs,      // D2HMs
+        totalMs,            // TotalTimeMs = H2D + Kernel + D2H
+        transferredBytes,
+        correct,
+        "1",                // workers = 1 GPU
+        "bottom_up_merge_sort_gpu=" + gpuName
+    );
+
+    printResult("CUDA", n, totalMs, correct,
+        "H2D=" + to_string((int)h2dMs) + "ms"
+        + " K=" + to_string((int)kernelMs) + "ms"
+        + " D2H=" + to_string((int)d2hMs) + "ms");
 
     // Цэвэрлэх
     CUDA_CHECK(cudaFree(d_arr));
     CUDA_CHECK(cudaFree(d_tmp));
-    CUDA_CHECK(cudaEventDestroy(start));
-    CUDA_CHECK(cudaEventDestroy(stop));
 }
 
 int main() {
+    const string csvFile = "results.csv";
+
     // GPU мэдээлэл харуулах
     cudaDeviceProp prop;
     CUDA_CHECK(cudaGetDeviceProperties(&prop, 0));
+
     cout << "====================================================\n";
-    cout << "  Merge Sort — CUDA (GPU параллел)\n";
+    cout << "  Merge Sort Benchmark — CUDA (GPU параллел)\n";
     cout << "  GPU: " << prop.name
          << "  |  SM: " << prop.multiProcessorCount
          << "  |  Санах ой: " << prop.totalGlobalMem / (1024*1024) << " MB\n";
     cout << "====================================================\n";
-    runTest(10'000);
-    runTest(100'000);
-    runTest(1'000'000);
+
+    benchmarkOne(10'000,   csvFile);
+    benchmarkOne(100'000,  csvFile);
+    benchmarkOne(1'000'000, csvFile);
+
     cout << "====================================================\n";
+    cout << "Saved/appended to " << csvFile << "\n";
+
     return 0;
 }
