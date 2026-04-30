@@ -2,29 +2,27 @@
 
 ## Файлын бүтэц
 
-```
+
 merge_sort/
 ├── 1_sequential.cpp   — Дараалсан хувилбар
 ├── 2_threaded.cpp     — std::thread хувилбар
 ├── 3_openmp.cpp       — OpenMP хувилбар
 ├── 4_cuda.cu          — CUDA (GPU) хувилбар
 └── Makefile
-```
 
----
 
 ## 1. Дараалсан (Sequential) — `1_sequential.cpp`
 
 ### Алгоритмын логик
 Merge sort нь **хуваа, эзэмш (divide and conquer)** зарчимд суурилна.
 
-```
+
 mergeSort(arr, left, right):
     mid = (left + right) / 2
     mergeSort(arr, left, mid)       ← зүүн хагасыг рекурсээр эрэмбэлнэ
     mergeSort(arr, mid+1, right)    ← баруун хагасыг рекурсээр эрэмбэлнэ
     merge(arr, left, mid, right)    ← нэгтгэнэ
-```
+    
 
 **Цогцолбор байдал:**
 - Хугацаа: O(n log n) — хамгийн муу, дундаж, хамгийн сайн бүгд адил
