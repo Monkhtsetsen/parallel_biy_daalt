@@ -1,11 +1,11 @@
 // ============================================================
 // Merge Sort Benchmark — 3. OpenMP version
 // Output: appends benchmark results into results.csv
-// Compile: g++ -O2 -std=c++17 -fopenmp -o omp 3_openmp_benchmark.cpp
+// Compile: g++ -O2 -std=c++17 -fopenmp -o omp 3_openmp.cpp
 // Run:     ./omp
 // Merge Sort Benchmark — OpenMP version
 // Compile:
-// g++ -O2 -std=c++17 -fopenmp -o omp 3_openmp_benchmark.cpp
+// g++ -O2 -std=c++17 -fopenmp -o omp 3_openmp.cpp
 
 #include "benchmark_utils.hpp"
 

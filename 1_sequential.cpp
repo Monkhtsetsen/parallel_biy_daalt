@@ -4,7 +4,7 @@
 // Run:     ./seq
 // Merge Sort Benchmark — 2. std::thread version
 // Output: appends benchmark results into results.csv
-// Compile Linux/MSYS2: g++ -O2 -std=c++17 -pthread -o thr 2_threaded_benchmark.cpp
+// Compile Linux/MSYS2: g++ -O2 -std=c++17 -pthread -o thr 2_threaded.cpp
 // Compile MSVC:        cl /EHsc /O2 2_threaded_benchmark.cpp
 // Run:                 ./thr
 // Merge Sort Benchmark — Sequential version
@@ -21,7 +21,7 @@ using namespace chrono;
 // ----------------------------------------------------------
 void mergeParts(vector<int>& arr, int left, int mid, int right) {
 
-    // Zuun heseg
+    // Zuun heseg 
     vector<int> L(arr.begin() + left, arr.begin() + mid + 1);
 
     // Baruun heseg
@@ -65,7 +65,8 @@ void mergeSortSequential(
     if (left >= right)
         return;
 
-    // Dund heseg oloh
+    // Dund heseg oloh 
+    //int iin hemjeenees heterch overflow bolohoos sergiilne
     int mid = left + (right - left) / 2;
 
     // Zuun hesgiig erembeleh

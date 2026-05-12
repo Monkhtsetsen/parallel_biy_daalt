@@ -1,12 +1,12 @@
 // Merge Sort Benchmark — 2. std::thread version
 // Output: appends benchmark results into results.csv
-// Compile Linux/MSYS2: g++ -O2 -std=c++17 -pthread -o thr 2_threaded_benchmark.cpp
-// Compile MSVC:        cl /EHsc /O2 2_threaded_benchmark.cpp
+// Compile Linux/MSYS2: g++ -O2 -std=c++17 -pthread -o thr 2_threaded.cpp
+// Compile MSVC:        cl /EHsc /O2 2_threaded.cpp
 // Run:                 ./thr
 
 // Merge Sort Benchmark — std::thread version
 // Compile Linux/MSYS2:
-// g++ -O2 -std=c++17 -pthread -o thr 2_threaded_benchmark.cpp
+// g++ -O2 -std=c++17 -pthread -o thr 2_threaded.cpp
 
 #include "benchmark_utils.hpp"
 
